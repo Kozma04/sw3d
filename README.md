@@ -1,4 +1,4 @@
 # sw3d
 ![Screenshot](media/screenshot.png)
 
-Fixed-point software rasterizer framework
+Software rasterizer framework implemented using fixed-point arithmetic.
