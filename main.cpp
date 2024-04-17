@@ -37,7 +37,7 @@ uint16_t *g_depth;
 float rot_pitch = 0.27, rot_yaw = 3.86;
 float cam_x = 6.2, cam_y = -33.4, cam_z = 5.8;
 float delta_t = 1;
-float cam_speed = 5;
+float cam_speed = 15;
 
 void render() {
     int32_t mx, my;
@@ -110,7 +110,7 @@ void render() {
         mul_mat4_16p16(&temp, &temp4, &temp2);
 
         //transform_perspectivef(&temp, (float)g_height / g_width, 120 / 180.f * 3.141592, 16, 32);
-        transform_perspective(&temp, 36700, 90 / 180.f * 3.141592 * 65536, 0.1 * 65536, 64 * 65536);
+        transform_perspective(&temp, (0x7fffffff / 36700) << 1, 90 / 180.f * 3.141592 * 65536, 0.1 * 65536, 64 * 65536);
         //tra_mat4_16p16(&temp, &temp4);
         mul_mat4_16p16(&temp, &temp2, &unif.mvp);
         //unif.mvp = temp2;
@@ -215,7 +215,7 @@ uint8_t setup() {
     TGFX_ASSERT(load_texture_file("D:\\sw3d_res\\bg1.bmp", &tex_mesh));
     TGFX_ASSERT(load_texture_file("D:\\sw3d_res\\heightmap_256.bmp", &tex_hmap));
 
-    gen_heightmap(&tex_hmap, hmap_vert, hmap_ind, &hmap_tris, 65536 * 2, 65536 * 1, 0, 0, 32, 32);
+    gen_heightmap(&tex_hmap, hmap_vert, hmap_ind, &hmap_tris, 65536 * 2, 65536 * 0.5, 64, 32, 32, 32);
     printf("hmap_tris=%u\n", hmap_tris);
     
     unif.uv_right_shift = 8;
@@ -239,7 +239,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pCmdLine, 
     freopen("conout$", "w", stdout);
     freopen("conout$", "w", stderr);
     printf("Program Start\n");
-    window_create(hInstance, 480, 272, 4);
+    window_create(hInstance, 480, 272, 3);
     if (!setup()) {
         Sleep(100000);
         return 1;

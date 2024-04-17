@@ -23,12 +23,12 @@ typedef enum tgfx_feature_enum {
     TGFX_DEPTH_WRITE        = 1 << 3,
     // Interpolate depth across primitives.
     TGFX_DEPTH_CALC         = 1 << 4,
-    // Discard pixels with depth >= depth buffer value. TGFX_DEPTH_TEST must be enabled as well.
+    // Discard pixels with depth >= depth buffer value. Requires TGFX_DEPTH_TEST enabled.
     TGFX_DEPTH_TEST_LOWER   = 1 << 5,
-    // Discard pixels with depth <= depth buffer value. TGFX_DEPTH_TEST must be enabled as well.
+    // Discard pixels with depth <= depth buffer value. Requires TGFX_DEPTH_TEST enabled.
     TGFX_DEPTH_TEST_HIGHER  = 1 << 6,
-    // Discard pixels with depth outside the interval specified with tgfx_depth_clip
-    TGFX_DEPTH_CLIP        = 1 << 7
+    // Discard pixels outside depth clipping interval
+    TGFX_DEPTH_CLIP         = 1 << 7
 } tgfx_feature_t;
 
 struct process_vertex_input_t {
@@ -61,7 +61,7 @@ struct process_pixel_output_t {
 typedef void (*process_vertex_fn_t)(process_vertex_input_t in, process_vertex_output_t out);
 typedef void (*process_pixel_fn_t)(process_pixel_input_t in, process_pixel_output_t out);
 
-
+// NOT USED
 enum attr_type_t {
     PIPELINE_ATTR_TYPE_I32 = 0,
     PIPELINE_ATTR_TYPE_FLT32 = 1,

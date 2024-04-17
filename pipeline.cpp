@@ -43,51 +43,6 @@ void tgfx_depth_clip(uint16_t clip_min, uint16_t clip_max) {
     g_depth_max = clip_max;
 }
 
-static float vec_cross(vec2_t a, vec2_t b) {
-    return a.x * b.y - a.y * b.x;
-}
-
-static inline float edge(vec2_t a, vec2_t b, vec2_t c) {
-    //return vec_cross({b.x - a.x, b.y - a.y}, {c.x - a.x, c.y - a.y});
-    return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
-}
-
-static inline float edge_i(vec2i_t a, vec2i_t b, vec2i_t c) {
-    //return vec_cross({b.x - a.x, b.y - a.y}, {c.x - a.x, c.y - a.y});
-    return (c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x);
-}
-
-static inline float edge_fixed(vec2i_t a, vec2i_t b, vec2i_t c) {
-    return mul_f16p16((c.x - a.x), (b.y - a.y)) - mul_f16p16((c.y - a.y), (b.x - a.x));
-}
-
-static inline void pixcolor_2(int32_t lambda_0_fp, int32_t lambda_1_fp, int32_t lambda_2_fp, int32_t pos_z, int32_t area_abc_inv, void* const buf, uint8_t* rgb, uint8_t* ok) {
-    // Interpolate the parameters
-    uint32_t buf_idx = 0;
-    int64_t interp;
-    for(int i = 0; i < g_proc.n_varying; i++) {
-        if(g_proc.varying_fmt[i].interpolate) {
-            for(int j = 0; j < g_proc.varying_fmt[i].count; j++) {
-                interp = (((int64_t)lambda_0_fp * g_varying_buf_vert[1][buf_idx]));
-                interp += (((int64_t)lambda_1_fp * g_varying_buf_vert[2][buf_idx]));
-                interp += (((int64_t)lambda_2_fp * g_varying_buf_vert[3][buf_idx]));
-                interp >>= 16;
-                g_varying_buf_vert[0][buf_idx] = interp;
-                buf_idx++;
-            }
-        }
-        else
-            for(int j = 0; j < g_proc.varying_fmt[i].count; j++)
-                g_varying_buf_vert[0][buf_idx] = g_varying_buf_vert[1][buf_idx];
-    }
-
-    // Call pixel processor
-    g_proc.process_pixel(
-        { 0, 0, pos_z, g_varying_buf_vert[0], g_uniforms },
-        { rgb }
-    );
-}
-
 void tgfx_proc_load(const pipeline_processor_t *proc) {
     uint32_t varying_size = 0;
     uint32_t uniform_size = 0;
@@ -119,9 +74,9 @@ void tgfx_draw_tris(void* const vertex_buf, uint16_t n_tris) {
 
 void tgfx_draw_tris_idx(void* vertex_buf, uint16_t* index_buf, uint16_t n_tris) {
     uint8_t* vert_buf_u8 = (uint8_t*)vertex_buf;
-    uint8_t* tri_buf = (uint8_t*)alloca(3 * g_proc.vertex_size);
+    uint8_t* tri_buf = (uint8_t*)_malloca(3 * g_proc.vertex_size);
     uint16_t vert_size = g_proc.vertex_size;
-    for (uint16_t i = 0; i < n_tris * 3;) {
+    for(uint16_t i = 0; i < n_tris * 3;) {
         memcpy(tri_buf, vert_buf_u8 + (uint32_t)index_buf[i++] * vert_size, vert_size);
         memcpy(tri_buf + vert_size, vert_buf_u8 + (uint32_t)index_buf[i++] * vert_size, vert_size);
         memcpy(tri_buf + vert_size * 2, vert_buf_u8 + (uint32_t)index_buf[i++] * vert_size, vert_size);
@@ -210,7 +165,6 @@ static void scanline(tgfx_scanline_t params) {
 }
 
 void tgfx_draw_tri(void* const buff) {
-
     int32_t x0, y0, x1, y1, x2, y2;
     int32_t z0, z1, z2;
     int32_t z0_inv, z1_inv, z2_inv;
@@ -230,14 +184,7 @@ void tgfx_draw_tri(void* const buff) {
     if(y0 == y1 && y0 == y2) return;
     if (z0 == 0 || z1 == 0 || z2 == 0) return;
     if (g_features & TGFX_DEPTH_CLIP) {
-        //int32_t z0_inv = (0x7fffffff / z0) >> 15;
-        //int32_t z1_inv = (0x7fffffff / z1) >> 15;
-        //int32_t z2_inv = (0x7fffffff / z2) >> 15;
-        int32_t z0_inv16 = z0;
-        int32_t z1_inv16 = z1;
-        int32_t z2_inv16 = z2;
-        //if (z0_inv16 < 0 && z1_inv16 < 0 || z2_inv16 < 0) return;
-        if ((z0_inv16 < g_depth_min || z0_inv16 > g_depth_max) && (z1_inv16 < g_depth_min || z1_inv16 > g_depth_max) && (z2_inv16 < g_depth_min || z2_inv16 > g_depth_max))
+        if ((z0 < g_depth_min || z0 > g_depth_max) && (z1 < g_depth_min || z1 > g_depth_max) && (z2 < g_depth_min || z2 > g_depth_max))
             return;
     }
 
@@ -284,7 +231,6 @@ void tgfx_draw_tri(void* const buff) {
     uint8_t color[3];
 
 
-    // Draw flat bottom triangle
     int32_t clip_y_start = y0;
     int32_t clip_y_end = y_mid;
 
@@ -317,6 +263,7 @@ void tgfx_draw_tri(void* const buff) {
     scan.z[0] = z0, scan.z[1] = z1, scan.z[2] = z2;
     scan.z_inv[0] = z0_inv, scan.z_inv[1] = z1_inv, scan.z_inv[2] = z2_inv;
 
+    // Draw flat bottom triangle
     if(y1 != y0) {
         if (clip_y_start < 0) clip_y_start = 0;
         if (clip_y_end >= g_height) clip_y_end = g_height - 1;

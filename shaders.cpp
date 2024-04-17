@@ -92,13 +92,12 @@ void basic_3d_process_pixel(process_pixel_input_t in, process_pixel_output_t out
     //col[1] = v;
     //col[2] = 0;
 
-    /*uint8_t blend_b = (in.depth >> 18) - 1;
-    blend_b = powf((float)(blend_b / 255.f), 0.3) * 255.f;
+    uint8_t blend_b = (in.depth >> 8) - 1;
     uint8_t blend_a = 255 - blend_b;
     uint8_t col_b[3] = {108, 99, 116};
     for (int i = 0; i < 3; i++) {
         col[i] = ((uint16_t)col[i] * blend_a + (uint16_t)col_b[i] * blend_b) >> 8;
-    }*/
+    }
     
     out.rgb[2] = col[0];
     out.rgb[1] = col[1];
